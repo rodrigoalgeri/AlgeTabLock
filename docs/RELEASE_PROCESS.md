@@ -2,6 +2,8 @@
 
 Use este roteiro sempre que for publicar uma nova versao.
 
+Para um guia mais detalhado e com exemplos, consulte [NOVA_VERSAO.md](NOVA_VERSAO.md).
+
 ## 1. Definir a nova versao
 
 Consulte [../VERSIONING.md](../VERSIONING.md) e escolha o incremento correto:
@@ -36,13 +38,13 @@ Checklist minimo:
 ```bash
 git add .
 git commit -m "chore: release vX.Y.Z"
+git push
 ```
 
 ## 5. Criar tag
 
 ```bash
 git tag -a vX.Y.Z -m "AlgeTab Lock vX.Y.Z"
-git push origin main
 git push origin vX.Y.Z
 ```
 
@@ -68,9 +70,9 @@ Crie um arquivo `.zip` contendo os arquivos da extensao, sem incluir:
 Inclua obrigatoriamente:
 
 - `AlgeTabLock/manifest.json`
-- `background.js`
-- `popup.html`
-- `popup.css`
-- `popup.js`
-- `icons/`
-- `fonts/`
+- `AlgeTabLock/background.js`
+- `AlgeTabLock/popup.html`
+- `AlgeTabLock/popup.css`
+- `AlgeTabLock/popup.js`
+- `AlgeTabLock/icons/`
+- `AlgeTabLock/fonts/`

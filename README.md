@@ -54,6 +54,7 @@ Documentos relacionados:
 - [VERSIONING.md](VERSIONING.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md)
+- [docs/NOVA_VERSAO.md](docs/NOVA_VERSAO.md)
 - [docs/GITHUB_SETUP.md](docs/GITHUB_SETUP.md)
 
 ## Desenvolvimento
