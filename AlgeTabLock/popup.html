@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlgeTab Lock</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <!-- Biblioteca inline de icones SVG reutilizada em toda a interface. -->
+    <svg class="icon-defs" aria-hidden="true" focusable="false">
+      <symbol id="icon-home" viewBox="0 0 24 24">
+        <path d="M3 11.5 12 4l9 7.5"></path>
+        <path d="M5.5 10.5V20h5v-5h3v5h5v-9.5"></path>
+      </symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 3 5 6v5.5c0 4.4 2.8 7.6 7 9.5 4.2-1.9 7-5.1 7-9.5V6l-7-3Z"></path>
+      </symbol>
+      <symbol id="icon-shield-check" viewBox="0 0 24 24">
+        <path d="M12 3 5 6v5.5c0 4.4 2.8 7.6 7 9.5 4.2-1.9 7-5.1 7-9.5V6l-7-3Z"></path>
+        <path d="m9 12 2 2 4-5"></path>
+      </symbol>
+      <symbol id="icon-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8"></circle>
+        <path d="M12 7.5V12l3 2"></path>
+      </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19 12a7.8 7.8 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8.4 8.4 0 0 0-1.7-1L14.5 3h-5l-.3 3.1a8.4 8.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.5a7.8 7.8 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8.4 8.4 0 0 0 1.7 1l.3 3.1h5l.3-3.1a8.4 8.4 0 0 0 1.7-1l2.4 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z"></path>
+      </symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24">
+        <rect x="6" y="10" width="12" height="10" rx="2"></rect>
+        <path d="M8.5 10V8a3.5 3.5 0 0 1 7 0v2"></path>
+        <path d="M12 14v2"></path>
+      </symbol>
+      <symbol id="icon-folder" viewBox="0 0 24 24">
+        <path d="M3.5 7.5h6l2 2h9v8.5a2 2 0 0 1-2 2h-15v-12.5Z"></path>
+        <path d="M3.5 7.5v-1.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1.5"></path>
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"></path>
+        <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path>
+      </symbol>
+      <symbol id="icon-list" viewBox="0 0 24 24">
+        <path d="M8 6h12"></path>
+        <path d="M8 12h12"></path>
+        <path d="M8 18h12"></path>
+        <path d="M4 6h.01"></path>
+        <path d="M4 12h.01"></path>
+        <path d="M4 18h.01"></path>
+      </symbol>
+      <symbol id="icon-info" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 11v5"></path>
+        <path d="M12 8h.01"></path>
+      </symbol>
+      <symbol id="icon-moon" viewBox="0 0 24 24">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454l0 .008"></path>
+      </symbol>
+      <symbol id="icon-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2.5"></path>
+        <path d="M12 19.5V22"></path>
+        <path d="M4.93 4.93 6.7 6.7"></path>
+        <path d="m17.3 17.3 1.77 1.77"></path>
+        <path d="M2 12h2.5"></path>
+        <path d="M19.5 12H22"></path>
+        <path d="m4.93 19.07 1.77-1.77"></path>
+        <path d="M17.3 6.7 19.07 4.93"></path>
+      </symbol>
+    </svg>
+
+    <!-- Estrutura principal do popup da extensão. -->
+    <main class="app">
+      <!-- Barra lateral com navegação rápida entre as páginas internas. -->
+      <aside class="sidebar" aria-label="Navegação">
+        <img class="app-icon" src="icons/icon48.png" alt="">
+
+        <nav class="nav">
+          <button class="nav-item active" type="button" aria-label="Inicio">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+          </button>
+          <button class="nav-item" type="button" aria-label="Proteção">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+          </button>
+          <button class="nav-item" type="button" aria-label="Histórico">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-clock"></use></svg>
+          </button>
+          <button class="nav-item" type="button" aria-label="Ajustes">
+            <svg class="ui-icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+          </button>
+        </nav>
+
+        <!-- Botao fixado no rodape da sidebar para alternar entre tema claro e escuro. -->
+        <button id="themeToggleBtn" class="theme-toggle" type="button" aria-label="Ativar modo escuro" aria-pressed="false" title="Alternar tema">
+          <svg class="ui-icon theme-icon theme-icon-moon" aria-hidden="true"><use href="#icon-moon"></use></svg>
+          <svg class="ui-icon theme-icon theme-icon-sun" aria-hidden="true"><use href="#icon-sun"></use></svg>
+        </button>
+      </aside>
+
+        <!-- Painel principal onde cada página do popup é exibida. -->
+      <section class="panel">
+        <!-- Cabeçalho fixo com nome do produto e atalho para a página Sobre. -->
+        <header class="header">
+          <div>
+            <h1><span class="app-name">AlgeTab</span> <span class="app-lock">Lock</span></h1>
+            <p>Proteja suas guias importantes</p>
+          </div>
+
+          <div class="more-menu">
+            <button class="more-btn" type="button" aria-label="Mais opções" aria-haspopup="menu" aria-expanded="false">
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+
+            <div id="moreDropdown" class="more-dropdown" role="menu" aria-label="Mais opções">
+              <button class="more-dropdown-item" type="button" data-page-target="page-about" role="menuitem">Sobre</button>
+              <button class="more-dropdown-item" type="button" data-page-target="page-help" role="menuitem">Ajuda</button>
+            </div>
+          </div>
+        </header>
+
+        <div id="pages">
+          <!-- Página inicial: mostra a aba atual e as ações principais de proteção. -->
+          <div id="page-home" class="page active">
+            <!-- Resumo da aba atualmente selecionada no navegador. -->
+            <section class="card current-card" aria-labelledby="current-title">
+              <h2 id="current-title">Guia atual</h2>
+              <div class="current-row">
+                <span class="site-icon">
+                  <img id="tabIcon" alt="">
+                  <span id="tabFallbackIcon" aria-hidden="true">&#9711;</span>
+                </span>
+                <span class="tab-copy">
+                  <strong id="tabTitle">Google</strong>
+                  <span id="tabUrl">https://www.google.com</span>
+                </span>
+                <span class="active-pill">Ativa</span>
+              </div>
+            </section>
+
+            <!-- Controles principais para travar a aba ou o grupo da aba atual. -->
+            <section class="card protection-card" aria-labelledby="protection-title">
+              <h2 id="protection-title">Prote&ccedil;&otilde;es</h2>
+
+              <button id="tabLockBtn" class="protection-row" type="button" aria-pressed="false">
+                <span class="feature-icon lock-feature" aria-hidden="true"><svg class="ui-icon"><use href="#icon-lock"></use></svg></span>
+                <span class="protection-copy">
+                  <strong id="tabLockTitle">Travar esta guia</strong>
+                  <span id="tabLockDescription">Impede que a guia seja fechada ou tenha a URL alterada.</span>
+                </span>
+                <span class="switch" aria-hidden="true"></span>
+              </button>
+
+              <button id="groupLockBtn" class="protection-row" type="button" aria-pressed="false">
+                <span class="feature-icon group-feature" aria-hidden="true"><svg class="ui-icon"><use href="#icon-folder"></use></svg></span>
+                <span class="protection-copy">
+                  <strong id="groupLockTitle">Travar grupo desta guia</strong>
+                  <span id="groupLockDescription">Impede que o grupo seja fechado e suas guias sejam perdidas.</span>
+                </span>
+                <span class="switch" aria-hidden="true"></span>
+              </button>
+            </section>
+
+            <!-- Estado resumido das proteções aplicadas na aba em foco. -->
+            <section class="card status-card" aria-labelledby="status-title">
+              <h2 id="status-title">Status da prote&ccedil;&atilde;o</h2>
+              <div class="status-row" id="statusRow">
+                <span class="status-icon" id="statusIcon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-shield-check"></use></svg></span>
+                <span class="status-copy">
+                  <strong id="status">Nenhuma proteção ativa</strong>
+                  <span id="statusDescription">Suas guias e grupos est&atilde;o desprotegidos.</span>
+                </span>
+              </div>
+            </section>
+          </div>
+
+          <!-- Página com a lista consolidada de proteções ativas. -->
+          <div id="page-protections" class="page">
+            <section class="card">
+              <h2>Prote&ccedil;&otilde;es ativas</h2>
+              <div id="locksList" class="locks-list">
+                <!-- Lista preenchida dinamicamente -->
+              </div>
+            </section>
+          </div>
+
+          <!-- Página com histórico das ações e restaurações realizadas. -->
+          <div id="page-history" class="page">
+            <section class="card">
+              <div class="section-title-row">
+                <h2>Hist&oacute;rico</h2>
+                <button id="clearHistoryBtn" class="tiny-action" type="button">Limpar</button>
+              </div>
+              <div id="historyList" class="history-list"></div>
+            </section>
+          </div>
+
+          <!-- Página com atalhos utilitários do painel. -->
+          <div id="page-settings" class="page">
+            <section class="card">
+              <h2>Ajustes</h2>
+              <div class="settings-list">
+                <button id="refreshStatusBtn" class="settings-action" type="button">
+                  <span class="settings-action-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-refresh"></use></svg></span>
+                  <span>
+                    <strong>Atualizar painel</strong>
+                    <small>Recarrega o estado da guia atual.</small>
+                  </span>
+                </button>
+
+                <button id="showProtectionsBtn" class="settings-action" type="button">
+                  <span class="settings-action-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-list"></use></svg></span>
+                  <span>
+                    <strong>Ver prote&ccedil;&otilde;es</strong>
+                    <small>Mostra guias e grupos travados.</small>
+                  </span>
+                </button>
+
+                <button id="backHomeBtn" class="settings-action" type="button">
+                  <span class="settings-action-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-home"></use></svg></span>
+                  <span>
+                    <strong>Voltar ao in&iacute;cio</strong>
+                    <small>Retorna para a guia atual.</small>
+                  </span>
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <!-- Página institucional com informações sobre a extensão. -->
+          <div id="page-about" class="page">
+            <section class="card about-card">
+              <div class="about-header">
+                <img class="about-icon" src="icons/icon48.png" alt="">
+                <div>
+                  <h2>Sobre o AlgeTab Lock</h2>
+                  <p>Vers&atilde;o 1.4.0 Beta, Código Genesis.</p>
+                  <p>Build 20260612.</p>
+                </div>
+              </div>
+
+              <div class="about-body">
+                <p>Extens&atilde;o para proteger guias e grupos importantes.</p>
+                <p>Release atual: v1.4.0</p>
+                <p>Código: Genesis</p>
+                <p>Status: Beta</p>
+                <p>Build 20260612.</p>
+                <p>&copy; 2026 AlgeTab Lock. Todos os direitos reservados.</p>
+                <p>
+                  Desenvolvido por AlgeriTec.
+                  <a href="https://algeritec.com.br" target="_blank" rel="noopener noreferrer">https://algeritec.com.br</a>
+                </p>
+                <p>
+                  Contato:
+                  <a href="mailto:rodrigoalgeri.ms@gmail.com">rodrigoalgeri.ms@gmail.com</a>
+                </p>
+              </div>
+            </section>
+          </div>
+
+          <div id="page-help" class="page">
+            <section class="card about-card">
+              <div class="about-header">
+                <img class="about-icon" src="icons/icon48.png" alt="">
+                <div>
+                  <h2>Ajuda</h2>
+                  <p>Dicas rápidas para usar o AlgeTab Lock no dia a dia.</p>
+                </div>
+              </div>
+
+              <div class="about-body">
+                <p>Use "Travar esta guia" para impedir fechamento acidental e mudanças de URL na aba atual.</p>
+                <p>Use "Travar grupo desta guia" para restaurar o grupo se ele for fechado por engano.</p>
+                <p>Abra "Proteções ativas" para ver tudo que está protegido e destravar quando quiser.</p>
+                <p>Se precisar de suporte, entre em contato por e-mail:</p>
+                <p>
+                  <a href="mailto:rodrigoalgeri.ms@gmail.com">rodrigoalgeri.ms@gmail.com</a>
+                </p>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- Rodapé fixo com lembrete do comportamento automático e acesso aos ajustes. -->
+        <footer class="footer">
+          <span class="info-icon" aria-hidden="true"><svg class="ui-icon"><use href="#icon-info"></use></svg></span>
+          <p>Guias ou grupos protegidos ser&atilde;o restaurados automaticamente se forem fechados.</p>
+          <button class="settings-btn" type="button" aria-label="Ajustes"><svg class="ui-icon" aria-hidden="true"><use href="#icon-settings"></use></svg></button>
+        </footer>
+      </section>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
