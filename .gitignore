@@ -21,6 +21,17 @@ dist/
 build/
 release/
 
+# Arquivos privados locais
+private/
+secrets/
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+
 # GitHub/temporarios
 *.tmp
 *.bak
