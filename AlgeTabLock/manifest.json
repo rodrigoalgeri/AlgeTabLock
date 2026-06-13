@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AlgeTab Lock",
-  "version": "1.4.0",
-  "description": "Protege guias e grupos contra fechamento e mudança de URL.",
+  "version": "1.4.1",
+  "description": "Protege guias e grupos contra fechamento acidental.",
   "permissions": ["tabs", "storage", "tabGroups"],
   "background": {
     "service_worker": "background.js"

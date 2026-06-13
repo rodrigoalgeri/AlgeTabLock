@@ -63,16 +63,6 @@ async function safeCreateTab(url, options = {}) {
   });
 }
 
-// Reverte a navegação de uma aba protegida para a URL original.
-async function safeUpdateTab(tabId, url) {
-  if (!isSafeUrl(url)) {
-    await addHistory("blocked", "URL bloqueada", "A extensão impediu a navegação para uma URL insegura.");
-    return;
-  }
-
-  await chrome.tabs.update(tabId, { url });
-}
-
 // Limpa apenas o histórico, preservando as proteções ativas.
 async function clearHistory() {
   const { lockedTabs, lockedGroups } = await getData();
@@ -87,6 +77,22 @@ async function clearHistory() {
 // Pequena espera usada para sincronizar eventos do navegador.
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Atualiza o snapshot do grupo quando uma guia protegida navega livremente.
+function updateGroupTabSnapshot(lockedGroups, groupId, tabId, url, title, matchTabId = tabId, matchUrl = url, windowId, index) {
+  const group = lockedGroups[String(groupId)];
+  if (!group || !Array.isArray(group.tabs)) return;
+
+  const item = group.tabs.find(tab => String(tab.tabId) === String(matchTabId)) ||
+    group.tabs.find(tab => tab.url === matchUrl);
+  if (!item) return;
+
+  item.tabId = tabId;
+  item.url = url;
+  item.title = title || item.title || "Guia protegida";
+  if (typeof windowId !== "undefined") item.windowId = windowId;
+  if (typeof index !== "undefined") item.index = index;
 }
 
 // Confirma se um grupo ainda existe antes de tentar reutilizá-lo.
@@ -158,9 +164,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         lockedTabs[tabId] = {
+          tabId: message.tabId,
           url: message.url,
           title: message.title || "Guia protegida",
-          groupId: typeof message.groupId !== 'undefined' ? message.groupId : -1
+          groupId: typeof message.groupId !== 'undefined' ? message.groupId : -1,
+          windowId: message.windowId,
+          index: message.index
         };
 
         await saveData(lockedTabs, lockedGroups);
@@ -220,17 +229,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         lockedGroups[groupId] = {
           title: message.groupTitle || "Grupo protegido",
+          color: message.groupColor,
           tabs: safeTabs.map(tab => ({
+            tabId: tab.id,
             url: tab.url,
-            title: tab.title || "Guia protegida"
+            title: tab.title || "Guia protegida",
+            windowId: tab.windowId,
+            index: tab.index
           }))
         };
 
         for (const tab of safeTabs) {
           lockedTabs[String(tab.id)] = {
+            tabId: tab.id,
             url: tab.url,
             title: tab.title || "Guia protegida",
-            groupId: message.groupId
+            groupId: message.groupId,
+            windowId: tab.windowId,
+            index: tab.index
           };
         }
 
@@ -279,7 +295,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Quando uma aba protegida é fechada, a extensão tenta recriá-la automaticamente.
-chrome.tabs.onRemoved.addListener(async (tabId) => {
+chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   try {
     const { lockedTabs, lockedGroups } = await getData();
     const key = String(tabId);
@@ -307,9 +323,16 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
       }
     }
 
-    const newTab = await safeCreateTab(saved.url, {
-      active: true
-    });
+    const createOptions = {
+      active: true,
+      windowId: saved.windowId || removeInfo.windowId
+    };
+
+    if (typeof saved.index === "number") {
+      createOptions.index = saved.index;
+    }
+
+    const newTab = await safeCreateTab(saved.url, createOptions);
 
     if (!newTab) {
       await saveData(lockedTabs, lockedGroups);
@@ -326,7 +349,12 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
     }
 
     // Reassocia o registro salvo ao novo ID gerado para a aba restaurada.
+    const previousTabId = saved.tabId || tabId;
+    saved.tabId = newTab.id;
+    saved.windowId = newTab.windowId;
+    saved.index = newTab.index;
     lockedTabs[String(newTab.id)] = saved;
+    updateGroupTabSnapshot(lockedGroups, saved.groupId, newTab.id, saved.url, saved.title, previousTabId, saved.url, saved.windowId, saved.index);
 
     await saveData(lockedTabs, lockedGroups);
     await addHistory("restore", "Guia restaurada", saved.title || saved.url || "");
@@ -335,34 +363,76 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
   }
 });
 
-// Impede mudanças de URL em abas ou grupos protegidos.
+// A guia travada continua navegando livremente; salvamos a ultima URL segura visitada.
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  try {
+    if (!changeInfo.url && !changeInfo.title && !changeInfo.status) return;
+
+    const { lockedTabs, lockedGroups } = await getData();
+    const tabKey = String(tabId);
+    const saved = lockedTabs[tabKey];
+
+    if (!saved) return;
+
+    let changed = false;
+    const previousUrl = saved.url;
+    const currentUrl = changeInfo.url || tab.url;
+
+    if (currentUrl && isSafeUrl(currentUrl) && currentUrl !== saved.url) {
+      saved.url = currentUrl;
+      changed = true;
+    }
+
+    const nextTitle = tab.title || changeInfo.title;
+    if (nextTitle && nextTitle !== saved.title) {
+      saved.title = nextTitle;
+      changed = true;
+    }
+
+    if (typeof tab.groupId !== "undefined" && tab.groupId !== saved.groupId) {
+      saved.groupId = tab.groupId;
+      changed = true;
+    }
+
+    if (typeof tab.windowId !== "undefined" && tab.windowId !== saved.windowId) {
+      saved.windowId = tab.windowId;
+      changed = true;
+    }
+
+    if (typeof tab.index !== "undefined" && tab.index !== saved.index) {
+      saved.index = tab.index;
+      changed = true;
+    }
+
+    if (!changed) return;
+
+    saved.tabId = tabId;
+    lockedTabs[tabKey] = saved;
+    updateGroupTabSnapshot(lockedGroups, saved.groupId, tabId, saved.url, saved.title, tabId, previousUrl, saved.windowId, saved.index);
+
+    await saveData(lockedTabs, lockedGroups);
+  } catch (error) {
+    console.error("Erro ao atualizar guia protegida:", error);
+  }
+});
+
+// Se a guia travada for movida, restaura depois na nova posicao.
+chrome.tabs.onMoved.addListener(async (tabId, moveInfo) => {
   try {
     const { lockedTabs, lockedGroups } = await getData();
     const tabKey = String(tabId);
+    const saved = lockedTabs[tabKey];
 
-    // Abas travadas sempre voltam para a URL originalmente salva.
-    if (lockedTabs[tabKey]) {
-      const originalUrl = lockedTabs[tabKey].url;
+    if (!saved) return;
 
-      if (changeInfo.url && changeInfo.url !== originalUrl) {
-        await safeUpdateTab(tabId, originalUrl);
+    saved.windowId = moveInfo.windowId;
+    saved.index = moveInfo.toIndex;
+    lockedTabs[tabKey] = saved;
+    updateGroupTabSnapshot(lockedGroups, saved.groupId, tabId, saved.url, saved.title, tabId, saved.url, saved.windowId, saved.index);
 
-        return;
-      }
-    }
-
-    // Grupos travados aceitam apenas as URLs que fazem parte do snapshot salvo.
-    if (tab.groupId !== -1 && lockedGroups[String(tab.groupId)]) {
-      const group = lockedGroups[String(tab.groupId)];
-      const allowedUrls = group.tabs.map(item => item.url);
-
-      if (changeInfo.url && !allowedUrls.includes(changeInfo.url)) {
-        await safeUpdateTab(tabId, allowedUrls[0]);
-      }
-    }
+    await saveData(lockedTabs, lockedGroups);
   } catch (error) {
-    console.error("Erro ao verificar URL:", error);
+    console.error("Erro ao atualizar posicao da guia protegida:", error);
   }
 });
 
@@ -441,19 +511,29 @@ if (chrome.tabGroups && chrome.tabGroups.onRemoved) {
         });
 
         // Recria o grupo com título original e remapeia os IDs atuais das abas.
-        await chrome.tabGroups.update(newGroupId, {
+        const groupUpdate = {
           title: savedGroup.title,
           collapsed: false
-        });
+        };
+
+        if (savedGroup.color) {
+          groupUpdate.color = savedGroup.color;
+        }
+
+        await chrome.tabGroups.update(newGroupId, groupUpdate);
 
         lockedGroups[String(newGroupId)] = savedGroup;
 
         createdTabs.forEach((tabId, index) => {
           const item = savedGroup.tabs[index];
+          item.tabId = tabId;
           lockedTabs[String(tabId)] = {
+            tabId,
             url: item.url,
             title: item.title || "Guia protegida",
-            groupId: newGroupId
+            groupId: newGroupId,
+            windowId: item.windowId,
+            index: item.index
           };
         });
       }

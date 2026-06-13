@@ -26,15 +26,20 @@ async function getCurrentTab() {
   return tab;
 }
 
-// Lê o título do grupo para exibir textos mais amigáveis na interface.
-async function getGroupTitle(groupId) {
+// Lê dados do grupo para preservar título e cor ao restaurar.
+async function getGroupInfo(groupId) {
   if (groupId === -1) return null;
 
   try {
     const group = await chrome.tabGroups.get(groupId);
-    return group.title || "Grupo protegido";
+    return {
+      title: group.title || "Grupo protegido",
+      color: group.color
+    };
   } catch {
-    return "Grupo protegido";
+    return {
+      title: "Grupo protegido"
+    };
   }
 }
 
@@ -72,12 +77,12 @@ function setTabLockedUI(locked) {
 
   if (locked) {
     tabLockTitle.textContent = "Guia travada";
-    tabLockDescription.textContent = "Esta guia está protegida contra fechamento e alterações.";
+    tabLockDescription.textContent = "Esta guia será restaurada se for fechada.";
     return;
   }
 
   tabLockTitle.textContent = "Travar esta guia";
-  tabLockDescription.textContent = "Impede que a guia seja fechada ou tenha a URL alterada.";
+  tabLockDescription.textContent = "Restaura esta guia automaticamente se ela for fechada.";
 }
 
 // Ajusta o botão de proteção de grupo e trata o caso em que a aba não pertence a grupo.
@@ -183,7 +188,9 @@ tabLockBtn.addEventListener("click", async () => {
       tabId: currentTab.id,
       url: currentTab.url,
       title: currentTab.title,
-      groupId: currentTab.groupId
+      groupId: currentTab.groupId,
+      windowId: currentTab.windowId,
+      index: currentTab.index
     },
     () => updateStatus()
   );
@@ -193,13 +200,14 @@ tabLockBtn.addEventListener("click", async () => {
 groupLockBtn.addEventListener("click", async () => {
   currentTab = await getCurrentTab();
 
-  const groupTitle = await getGroupTitle(currentTab.groupId);
+  const groupInfo = await getGroupInfo(currentTab.groupId);
 
   chrome.runtime.sendMessage(
     {
       action: "toggleGroupLock",
       groupId: currentTab.groupId,
-      groupTitle
+      groupTitle: groupInfo?.title,
+      groupColor: groupInfo?.color
     },
     () => updateStatus()
   );
@@ -300,7 +308,10 @@ if (refreshStatusBtn) {
     setRefreshButtonLoading(true);
 
     try {
-      await updateStatus();
+      await Promise.all([
+        updateStatus(),
+        new Promise(resolve => setTimeout(resolve, 650))
+      ]);
     } finally {
       setRefreshButtonLoading(false);
     }

@@ -68,6 +68,11 @@ body {
 
 button {
   font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 /* Definicoes SVG invisiveis e estilo padrao dos icones. */
@@ -214,7 +219,6 @@ button {
   border: 0;
   border-radius: 14px;
   color: #23314f;
-  cursor: default;
   line-height: 1;
   background: rgba(255, 255, 255, 0.42);
   box-shadow:
@@ -465,7 +469,7 @@ button {
 }
 
 .settings-action:disabled {
-  cursor: default;
+  cursor: not-allowed;
 }
 
 .settings-action-icon {
@@ -491,6 +495,7 @@ button {
 #refreshStatusBtn.is-loading .settings-action-icon .ui-icon {
   animation: refresh-spin 0.9s linear infinite;
   transform-origin: center;
+  transform-box: fill-box;
 }
 
 .settings-action strong {
@@ -999,7 +1004,6 @@ h1 {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.68),
     0 10px 24px rgba(40, 52, 82, 0.22);
-  cursor: default;
 }
 
 .settings-btn .ui-icon {

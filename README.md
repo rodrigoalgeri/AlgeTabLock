@@ -1,17 +1,16 @@
 # AlgeTab Lock
 
-Extensao Manifest V3 para proteger guias e grupos importantes contra fechamento acidental e mudancas indesejadas de URL.
+Extensao Manifest V3 para proteger guias e grupos importantes contra fechamento acidental.
 
 ## Visao geral
 
-O AlgeTab Lock permite travar uma guia individual ou um grupo de guias. Quando uma guia protegida e fechada, a extensao tenta restaura-la automaticamente. Quando um grupo protegido e removido, a extensao recria o grupo com as guias salvas.
+O AlgeTab Lock permite travar uma guia individual ou um grupo de guias. A navegacao dentro da guia continua livre. Quando uma guia protegida e fechada, a extensao tenta restaura-la automaticamente na ultima URL segura visitada. Quando um grupo protegido e removido, a extensao recria o grupo com as guias salvas.
 
 ## Recursos
 
 - Protecao de guia individual contra fechamento acidental.
 - Protecao de grupo de guias.
-- Restauracao automatica de guias protegidas.
-- Bloqueio de mudancas de URL em guias protegidas.
+- Restauracao automatica de guias protegidas na ultima URL segura visitada.
 - Historico local de eventos recentes.
 - Tema claro e escuro no popup.
 - Validacao de URLs restauraveis para evitar navegacoes inseguras.
